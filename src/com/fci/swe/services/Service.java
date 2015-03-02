@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.servlet.http.HttpSession;
 import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -97,5 +98,36 @@ public class Service {
 		return object.toString();
 
 	}
-
+	@POST
+	@Path("/addFriendservice")
+	public String addFriend(@FormParam("email") String email){
+		UserEntity user=UserEntity.getUser();
+		user.removeRequest(email);
+		user.addFriend(email);
+		UserEntity.updateFriends(user);
+		UserEntity.updateRequests(user);
+		
+		UserEntity secondUser=UserEntity.getUser(email);
+		secondUser.addFriend(user.getEmail());
+		UserEntity.updateFriends(secondUser);
+		
+		JSONObject object = new JSONObject();
+		object.put("Status", "OK");
+		return object.toString();
+	}
+	@POST
+	@Path("/sendRequestservice")
+	public String sendRequest(@FormParam("email") String email){
+		UserEntity user=UserEntity.getUser(email);
+		if(user!=null){
+			user.addRequest(UserEntity.getUser().getEmail());
+			UserEntity.updateRequests(user);	
+			JSONObject object = new JSONObject();
+			object.put("Status", "OK");
+			return object.toString();
+		}
+		JSONObject object = new JSONObject();
+		object.put("Status", "Failed");
+		return object.toString();
+	}
 }
