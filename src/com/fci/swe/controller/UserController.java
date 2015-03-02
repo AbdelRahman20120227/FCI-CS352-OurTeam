@@ -17,6 +17,7 @@ import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -45,6 +46,7 @@ public class UserController {
 	 * 
 	 * @return sign up page
 	 */
+	
 	@GET
 	@Path("/signup")
 	public Response signUp() {
@@ -192,10 +194,12 @@ public class UserController {
 			JSONObject object = (JSONObject) obj;
 			if (object.get("Status").equals("Failed"))
 				return null;
-			Map<String, String> map = new HashMap<String, String>();
-			UserEntity user = UserEntity.getUser(object.toJSONString());
+			Map<String, Object> map = new HashMap<String, Object>();
+			UserEntity user = UserEntity.getUser(uname,pass);
 			map.put("name", user.getName());
 			map.put("email", user.getEmail());
+			map.put("friends", UserEntity.getUser().getFriends());
+			map.put("requests", UserEntity.getUser().getRequests());
 			return Response.ok(new Viewable("/jsp/home", map)).build();
 		} catch (MalformedURLException e) {
 			// TODO Auto-generated catch block
@@ -214,6 +218,103 @@ public class UserController {
 		return null;
 
 	}
+	@POST
+	@Path("/addFriend")
+	@Produces(MediaType.TEXT_PLAIN)
+	public String addFriend(@FormParam("select") String email){
+		String serviceUrl = "http://localhost:8888/rest/addFriendservice";
+		try {
+			URL url=new URL(serviceUrl);
+			String urlParameters="email="+email;
+			HttpURLConnection conn=(HttpURLConnection)url.openConnection();
+			conn.setDoOutput(true);
+			conn.setDoInput(true);
+			conn.setInstanceFollowRedirects(false);
+			conn.setRequestMethod("POST");
+			conn.setConnectTimeout(60000);  //60 Seconds
+			conn.setReadTimeout(60000);  //60 Seconds
+			
+			conn.setRequestProperty("Content-Type",
+					"application/x-www-form-urlencoded;charset=UTF-8");
+			OutputStreamWriter writer = new OutputStreamWriter(
+					conn.getOutputStream());
+			writer.write(urlParameters);
+			writer.flush();
+			String line, retJson = "";
+			BufferedReader reader = new BufferedReader(new InputStreamReader(
+					conn.getInputStream()));
 
+			while ((line = reader.readLine()) != null) {
+				retJson += line;
+			}
+			writer.close();
+			reader.close();
+			JSONParser parser = new JSONParser();
+			Object obj = parser.parse(retJson);
+			JSONObject object = (JSONObject) obj;
+			if(object.get("Status").equals("OK")){
+				return email+" added successfully";
+			}
+		} catch (MalformedURLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (ParseException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return "problem";
+	}
+	@POST
+	@Path("/sendRequest")
+	@Produces(MediaType.TEXT_PLAIN)
+	public String sendRequest(@FormParam("email") String email){
+		String serviceUrl = "http://localhost:8888/rest/sendRequestservice";
+		try {
+			URL url=new URL(serviceUrl);
+			String urlParameters="email="+email;
+			HttpURLConnection conn=(HttpURLConnection)url.openConnection();
+			conn.setDoOutput(true);
+			conn.setDoInput(true);
+			conn.setInstanceFollowRedirects(false);
+			conn.setRequestMethod("POST");
+			conn.setConnectTimeout(60000);  //60 Seconds
+			conn.setReadTimeout(60000);  //60 Seconds
+			
+			conn.setRequestProperty("Content-Type",
+					"application/x-www-form-urlencoded;charset=UTF-8");
+			OutputStreamWriter writer = new OutputStreamWriter(
+					conn.getOutputStream());
+			writer.write(urlParameters);
+			writer.flush();
+			String line, retJson = "";
+			BufferedReader reader = new BufferedReader(new InputStreamReader(
+					conn.getInputStream()));
+
+			while ((line = reader.readLine()) != null) {
+				retJson += line;
+			}
+			writer.close();
+			reader.close();
+			JSONParser parser = new JSONParser();
+			Object obj = parser.parse(retJson);
+			JSONObject object = (JSONObject) obj;
+			if(object.get("Status").equals("OK")){
+				return "Request sent to "+email+" successfully";
+			}
+		} catch (MalformedURLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (ParseException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return "problem";
+	}
 
 }
